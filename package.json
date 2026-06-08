@@ -1,0 +1,23 @@
+{
+  "name": "openai-keypool-desktop",
+  "version": "1.0.0",
+  "description": "Desktop app for managing upstream API URLs, multiple API keys, one integrated local key, and local usage stats.",
+  "main": "main.js",
+  "scripts": {
+    "start": "node api-key-pool-proxy-enhanced.js",
+    "dev": "node api-key-pool-proxy-enhanced.js",
+    "desktop": "electron ."
+  },
+  "keywords": [
+    "openai",
+    "proxy",
+    "key-pool",
+    "desktop",
+    "electron"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^39.2.6"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+config.json
+api_keys.json
+usage_stats.json
+proxy.log
+desktop.log
+*.log
+.DS_Store

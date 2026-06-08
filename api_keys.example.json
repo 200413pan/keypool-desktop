@@ -1,0 +1,22 @@
+{
+  "api_keys": [
+    {
+      "name": "provider-1",
+      "key": "replace-with-your-upstream-key-1",
+      "model": "gpt-5.5",
+      "daily_quota": 1000,
+      "used_today": 0,
+      "last_reset": "2026-06-09",
+      "enabled": true
+    },
+    {
+      "name": "provider-2",
+      "key": "replace-with-your-upstream-key-2",
+      "model": "gpt-5.5",
+      "daily_quota": 1000,
+      "used_today": 0,
+      "last_reset": "2026-06-09",
+      "enabled": true
+    }
+  ]
+}

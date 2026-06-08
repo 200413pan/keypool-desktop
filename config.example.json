@@ -1,0 +1,7 @@
+{
+  "host": "127.0.0.1",
+  "port": 8080,
+  "upstream_url": "https://api.freemodel.dev/v1/chat/completions",
+  "proxy_api_key": "ak_replace_with_your_local_proxy_key",
+  "default_model": "gpt-5.5"
+}

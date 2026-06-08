@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Key Pool Proxy</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#e5e7eb}main{max-width:1180px;margin:0 auto;padding:28px}h1{margin:0 0 6px;font-size:28px}h2{margin:0 0 16px;font-size:18px}.muted{color:#94a3b8}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:#111827;border:1px solid #243044;border-radius:16px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.18)}label{display:block;margin:12px 0 6px;color:#cbd5e1;font-size:13px}input,select{width:100%;background:#0b1220;color:#f8fafc;border:1px solid #334155;border-radius:10px;padding:10px 12px;font-size:14px}button{background:#2563eb;color:white;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600}button.secondary{background:#334155}button.danger{background:#dc2626}button:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.pill{display:inline-flex;padding:4px 8px;border-radius:999px;background:#1e293b;color:#cbd5e1;font-size:12px}.success{color:#86efac}.warn{color:#fbbf24}.copy{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#020617;border:1px solid #334155;border-radius:10px;padding:10px;overflow:auto;white-space:nowrap}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #243044;padding:10px;text-align:left;font-size:13px}th{color:#94a3b8;font-weight:600}.full{grid-column:1/-1}.stat{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat div{background:#0b1220;border:1px solid #243044;border-radius:12px;padding:12px}.stat b{display:block;font-size:20px;margin-top:4px}.toast{position:fixed;right:20px;bottom:20px;background:#16a34a;color:white;border-radius:12px;padding:12px 16px;display:none}@media(max-width:800px){.grid{grid-template-columns:1fr}.stat{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <main>
+    <header style="margin-bottom:20px">
+      <h1>API Key Pool Proxy</h1>
+      <div class="muted">单用户桌面管理后台：配置上游、多个 API Key、统一集成 Key 和用量统计</div>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>集成信息</h2>
+        <label>API 格式</label><div class="pill">OpenAI Compatible</div>
+        <label>Base URL</label><div id="baseUrl" class="copy"></div>
+        <label>统一 API Key</label><div id="proxyKey" class="copy"></div>
+        <div class="actions">
+          <button onclick="copyText(baseUrl.textContent)">复制 Base URL</button>
+          <button onclick="copyText(proxyKey.textContent)">复制 API Key</button>
+          <button class="secondary" onclick="regenerateKey()">重新生成统一 Key</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>上游设置</h2>
+        <label>上游接口地址</label>
+        <input id="upstreamUrl" placeholder="https://api.freemodel.dev/v1/chat/completions" />
+        <label>默认模型</label>
+        <input id="defaultModel" placeholder="gpt-5.5" />
+        <div class="actions">
+          <button onclick="saveConfig()">保存设置</button>
+          <button class="secondary" onclick="loadAll()">刷新</button>
+        </div>
+      </div>
+
+      <div class="card full">
+        <h2>添加 / 编辑上游 API Key</h2>
+        <input id="editId" type="hidden" />
+        <div class="grid">
+          <div><label>名称</label><input id="keyName" placeholder="账户1" /></div>
+          <div><label>模型</label><input id="keyModel" placeholder="gpt-5.5，不填则使用默认模型" /></div>
+          <div><label>API Key</label><input id="keyValue" placeholder="仅新增或替换时填写" /></div>
+          <div><label>每日额度（本地请求次数）</label><input id="keyQuota" type="number" value="1000" /></div>
+        </div>
+        <label><input id="keyEnabled" type="checkbox" checked style="width:auto" /> 启用</label>
+        <div class="actions">
+          <button onclick="saveKey()">保存 Key</button>
+          <button class="secondary" onclick="clearKeyForm()">清空</button>
+        </div>
+      </div>
+
+      <div class="card full">
+        <h2>API Key 池</h2>
+        <table>
+          <thead><tr><th>名称</th><th>Key</th><th>模型</th><th>今日用量</th><th>额度</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="keysTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card full">
+        <h2>用量统计</h2>
+        <div class="stat">
+          <div><span class="muted">总请求</span><b id="totalReq">0</b></div>
+          <div><span class="muted">Prompt Tokens</span><b id="promptTok">0</b></div>
+          <div><span class="muted">Completion Tokens</span><b id="completionTok">0</b></div>
+          <div><span class="muted">Total Tokens</span><b id="totalTok">0</b></div>
+        </div>
+        <h3>模型统计</h3>
+        <table><thead><tr><th>模型</th><th>请求</th><th>Prompt</th><th>Completion</th><th>Total</th></tr></thead><tbody id="modelsTable"></tbody></table>
+        <div class="actions"><button class="danger" onclick="resetUsage()">重置本地统计</button></div>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let config = null;
+    let keys = [];
+
+    async function api(path, options = {}) {
+      const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '请求失败');
+      return data;
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 1800);
+    }
+
+    async function copyText(text) {
+      await navigator.clipboard.writeText(text);
+      showToast('已复制');
+    }
+
+    async function loadAll() {
+      config = await api('/api/config');
+      keys = await api('/api/keys');
+      const stats = await api('/api/stats');
+      renderConfig(); renderKeys(); renderStats(stats);
+    }
+
+    function renderConfig() {
+      baseUrl.textContent = config.base_url;
+      proxyKey.textContent = config.proxy_api_key;
+      upstreamUrl.value = config.upstream_url;
+      defaultModel.value = config.default_model;
+    }
+
+    function renderKeys() {
+      keysTable.innerHTML = keys.map(k => `
+        <tr>
+          <td>${escapeHtml(k.name)}</td><td>${escapeHtml(k.key_masked)}</td><td>${escapeHtml(k.model || config.default_model)}</td>
+          <td>${k.used_today}</td><td>${k.daily_quota}</td><td>${k.enabled ? '<span class="success">启用</span>' : '<span class="warn">停用</span>'}</td>
+          <td><button class="secondary" onclick="editKey(${k.id})">编辑</button> <button class="danger" onclick="deleteKey(${k.id})">删除</button></td>
+        </tr>`).join('');
+    }
+
+    function renderStats(stats) {
+      totalReq.textContent = stats.total?.requests || 0;
+      promptTok.textContent = stats.total?.tokens?.prompt || 0;
+      completionTok.textContent = stats.total?.tokens?.completion || 0;
+      totalTok.textContent = stats.total?.tokens?.total || 0;
+      modelsTable.innerHTML = Object.entries(stats.models || {}).map(([model, s]) => `
+        <tr><td>${escapeHtml(model)}</td><td>${s.requests}</td><td>${s.tokens.prompt}</td><td>${s.tokens.completion}</td><td>${s.tokens.total}</td></tr>`).join('');
+    }
+
+    async function saveConfig() {
+      await api('/api/config', { method: 'POST', body: JSON.stringify({ upstream_url: upstreamUrl.value, default_model: defaultModel.value }) });
+      showToast('设置已保存'); await loadAll();
+    }
+
+    async function regenerateKey() {
+      await api('/api/config', { method: 'POST', body: JSON.stringify({ regenerate_proxy_key: true }) });
+      showToast('统一 Key 已重新生成'); await loadAll();
+    }
+
+    function editKey(id) {
+      const k = keys.find(x => x.id === id); if (!k) return;
+      editId.value = k.id; keyName.value = k.name; keyModel.value = k.model || ''; keyValue.value = ''; keyQuota.value = k.daily_quota; keyEnabled.checked = k.enabled;
+      keyName.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function clearKeyForm() {
+      editId.value = ''; keyName.value = ''; keyModel.value = ''; keyValue.value = ''; keyQuota.value = 1000; keyEnabled.checked = true;
+    }
+
+    async function saveKey() {
+      const body = { name: keyName.value, key: keyValue.value, model: keyModel.value, daily_quota: Number(keyQuota.value), enabled: keyEnabled.checked };
+      if (editId.value !== '') body.id = Number(editId.value);
+      await api('/api/keys', { method: 'POST', body: JSON.stringify(body) });
+      clearKeyForm(); showToast('Key 已保存'); await loadAll();
+    }
+
+    async function deleteKey(id) {
+      if (!confirm('确认删除这个 Key？')) return;
+      await api('/api/keys/delete', { method: 'POST', body: JSON.stringify({ id }) });
+      showToast('Key 已删除'); await loadAll();
+    }
+
+    async function resetUsage() {
+      if (!confirm('确认重置本地用量统计？')) return;
+      await api('/api/reset-usage', { method: 'POST', body: '{}' });
+      showToast('统计已重置'); await loadAll();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+
+    loadAll().catch(err => alert(err.message));
+    setInterval(loadAll, 5000);
+  </script>
+</body>
+</html>
