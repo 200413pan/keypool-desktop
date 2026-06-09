@@ -19,7 +19,10 @@
     "desktop",
     "electron"
   ],
-  "author": "",
+  "author": {
+    "name": "KeyPool Desktop Contributors",
+    "email": "noreply@example.com"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^39.2.6",
