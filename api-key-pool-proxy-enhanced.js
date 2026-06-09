@@ -281,6 +281,12 @@ class APIKeyPool {
         this.saveConfig();
     }
 
+    exhaustKey(index) {
+        if (!this.keys[index]) return;
+        this.keys[index].used_today = this.keys[index].daily_quota || this.keys[index].used_today || 0;
+        this.saveConfig();
+    }
+
     upsertKey(input) {
         const record = {
             name: String(input.name || '').trim() || '未命名 Key',
@@ -450,7 +456,11 @@ class APIProxy {
                 return;
             }
 
-            if (![401, 403, 429, 500, 502, 503, 504].includes(response.status)) {
+            if ([402].includes(response.status)) {
+                this.keyPool.exhaustKey(index);
+            }
+
+            if (![401, 402, 403, 429, 500, 502, 503, 504].includes(response.status)) {
                 const usage = response.data.usage || {};
                 this.usageStats.recordRequest(keyInfo.name, requestData.model, {
                     prompt: usage.prompt_tokens || 0,
@@ -481,7 +491,7 @@ class APIProxy {
 
             const transport = target.protocol === 'http:' ? http : https;
             const upstreamReq = transport.request(target, options, upstreamRes => {
-                if (data.stream && ![401, 403, 429, 500, 502, 503, 504].includes(upstreamRes.statusCode || 0)) {
+                if (data.stream && ![401, 402, 403, 429, 500, 502, 503, 504].includes(upstreamRes.statusCode || 0)) {
                     let usage = null;
                     clientRes.writeHead(upstreamRes.statusCode || 200, {
                         'Content-Type': upstreamRes.headers['content-type'] || 'text/event-stream; charset=utf-8',
