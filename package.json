@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node api-key-pool-proxy-enhanced.js",
     "dev": "node api-key-pool-proxy-enhanced.js",
-    "desktop": "electron ."
+    "desktop": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
   },
   "keywords": [
     "openai",
@@ -18,6 +20,46 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^39.2.6"
+    "electron": "^39.2.6",
+    "electron-builder": "^26.15.2"
+  },
+  "build": {
+    "appId": "com.keypool.desktop",
+    "productName": "KeyPool Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "api-key-pool-proxy-enhanced.js",
+      "main.js",
+      "public/**/*",
+      "config.example.json",
+      "api_keys.example.json",
+      "usage_stats.example.json",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

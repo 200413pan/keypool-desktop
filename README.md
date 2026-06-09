@@ -105,6 +105,21 @@ npm start
 npm run desktop
 ```
 
+## Windows 版本
+
+项目已配置 Windows 自动构建。每次推送到 `main` 分支后，GitHub Actions 会生成 Windows 安装包和便携版。
+
+你可以在 GitHub 仓库的 **Actions → Build Windows App** 页面下载构建产物。
+
+本地构建 Windows 版本：
+
+```bash
+npm install
+npm run dist:win
+```
+
+构建产物会输出到 `dist/` 目录。
+
 ## 客户端接入
 
 推荐填写：

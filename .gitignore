@@ -1,5 +1,4 @@
 node_modules/
-package-lock.json
 config.json
 api_keys.json
 usage_stats.json
