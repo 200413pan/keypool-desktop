@@ -8,7 +8,9 @@
     "dev": "node api-key-pool-proxy-enhanced.js",
     "desktop": "electron .",
     "dist": "electron-builder",
-    "dist:win": "electron-builder --win"
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist:mac": "electron-builder --mac"
   },
   "keywords": [
     "openai",
@@ -53,6 +55,44 @@
           ]
         }
       ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.developer-tools",
       "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {

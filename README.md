@@ -105,17 +105,23 @@ npm start
 npm run desktop
 ```
 
-## Windows 版本
+## 桌面版本构建
 
-项目已配置 Windows 自动构建。每次推送到 `main` 分支后，GitHub Actions 会生成 Windows 安装包和便携版。
+项目已配置 Windows、Linux 和 macOS 自动构建。每次推送到 `main` 分支后，GitHub Actions 会生成三平台构建产物。
 
-你可以在 GitHub 仓库的 **Actions → Build Windows App** 页面下载构建产物。
+你可以在 GitHub 仓库的 **Actions → Build Desktop Apps** 页面下载构建产物：
 
-本地构建 Windows 版本：
+- `keypool-desktop-windows`：Windows 安装包 / 便携版
+- `keypool-desktop-linux`：Linux AppImage / deb
+- `keypool-desktop-macos`：macOS dmg / zip
+
+本地构建：
 
 ```bash
 npm install
-npm run dist:win
+npm run dist:win    # Windows
+npm run dist:linux  # Linux
+npm run dist:mac    # macOS
 ```
 
 构建产物会输出到 `dist/` 目录。
