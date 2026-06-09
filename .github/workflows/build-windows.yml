@@ -29,7 +29,7 @@ jobs:
           node --check main.js
 
       - name: Build Windows artifacts
-        run: npm run dist:win
+        run: npm run dist:win -- --publish never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
