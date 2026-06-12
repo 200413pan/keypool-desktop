@@ -40,6 +40,19 @@
         </div>
       </div>
 
+      <div class="card">
+        <h2>当前使用 Key</h2>
+        <div class="pill" id="currentKeyStatus">自动选择模式</div>
+        <label>手动选择 Key</label>
+        <select id="manualKeySelect">
+          <option value="">自动选择（轮询）</option>
+        </select>
+        <div class="actions">
+          <button onclick="switchCurrentKey()">切换 Key</button>
+          <button class="secondary" onclick="loadAll()">刷新</button>
+        </div>
+      </div>
+
       <div class="card full">
         <h2>添加 / 编辑上游 API Key</h2>
         <input id="editId" type="hidden" />
@@ -106,7 +119,8 @@
       config = await api('/api/config');
       keys = await api('/api/keys');
       const stats = await api('/api/stats');
-      renderConfig(); renderKeys(); renderStats(stats);
+      const currentKey = await api('/api/current-key');
+      renderConfig(); renderKeys(); renderStats(stats); renderCurrentKey(currentKey, keys);
     }
 
     function renderConfig() {
@@ -114,6 +128,32 @@
       proxyKey.textContent = config.proxy_api_key;
       upstreamUrl.value = config.upstream_url;
       defaultModel.value = config.default_model;
+    }
+
+    function renderCurrentKey(currentKey, keys) {
+      const select = document.getElementById('manualKeySelect');
+      const status = document.getElementById('currentKeyStatus');
+
+      // 更新下拉选项
+      select.innerHTML = '<option value="">自动选择（轮询）</option>';
+      keys.forEach(k => {
+        const option = document.createElement('option');
+        option.value = k.id;
+        option.textContent = `${k.name} (${k.key_masked})`;
+        select.appendChild(option);
+      });
+
+      // 更新当前状态
+      if (currentKey && currentKey.current_key) {
+        const keyName = currentKey.current_key.name;
+        select.value = currentKey.current_key.index;
+        status.textContent = `当前使用: ${keyName}`;
+        status.className = 'pill success';
+      } else {
+        select.value = '';
+        status.textContent = '自动选择模式';
+        status.className = 'pill';
+      }
     }
 
     function renderKeys() {
@@ -171,6 +211,15 @@
       if (!confirm('确认重置本地用量统计？')) return;
       await api('/api/reset-usage', { method: 'POST', body: '{}' });
       showToast('统计已重置'); await loadAll();
+    }
+
+    async function switchCurrentKey() {
+      const select = document.getElementById('manualKeySelect');
+      const value = select.value;
+      const index = value === '' ? null : Number(value);
+      await api('/api/current-key', { method: 'POST', body: JSON.stringify({ index }) });
+      showToast(index === null ? '已切换到自动选择模式' : 'Key 切换成功');
+      await loadAll();
     }
 
     function escapeHtml(value) {

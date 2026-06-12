@@ -204,6 +204,7 @@ class APIKeyPool {
         this.configPath = configPath;
         this.keys = [];
         this.currentIndex = 0;
+        this.currentKeyIndex = null; // 当前正在使用的 key 索引
         this.loadConfig();
     }
 
@@ -254,14 +255,44 @@ class APIKeyPool {
         return {
             total_keys: keys.length,
             enabled_keys: keys.filter(k => k.enabled).length,
+            current_key_index: this.currentKeyIndex,
             keys
         };
+    }
+
+    setCurrentKey(index) {
+        if (index !== null && !this.keys[index]) {
+            throw new Error('Key 不存在');
+        }
+        this.currentKeyIndex = index;
+        console.log(`[INFO] 当前使用的 Key: ${index !== null ? this.keys[index].name : '自动选择'}`);
+    }
+
+    getCurrentKey() {
+        if (this.currentKeyIndex === null) return null;
+        const keyInfo = this.keys[this.currentKeyIndex];
+        if (!keyInfo || !keyInfo.enabled) return null;
+        if ((keyInfo.used_today || 0) >= (keyInfo.daily_quota || Infinity)) return null;
+        return { index: this.currentKeyIndex, keyInfo };
     }
 
     getNextKey(excluded = new Set()) {
         this.checkResetDailyQuota();
         if (!this.keys.length) return null;
 
+        // 如果设置了手动选择的 key，优先使用它
+        if (this.currentKeyIndex !== null) {
+            const keyInfo = this.keys[this.currentKeyIndex];
+            if (keyInfo && keyInfo.enabled && keyInfo.key) {
+                const used = keyInfo.used_today || 0;
+                const quota = keyInfo.daily_quota || Infinity;
+                if (used < quota && !excluded.has(this.currentKeyIndex)) {
+                    return { index: this.currentKeyIndex, keyInfo };
+                }
+            }
+        }
+
+        // 否则轮询选择
         for (let i = 0; i < this.keys.length; i++) {
             const index = this.currentIndex;
             const keyInfo = this.keys[index];
@@ -391,6 +422,20 @@ class APIProxy {
             this.keyPool.resetUsage();
             this.usageStats.reset();
             return sendJson(res, 200, { ok: true });
+        }
+        if (url.pathname === '/api/current-key' && req.method === 'GET') {
+            const current = this.keyPool.getCurrentKey();
+            return sendJson(res, 200, { current_key: current ? { index: current.index, name: current.keyInfo.name } : null });
+        }
+        if (url.pathname === '/api/current-key' && req.method === 'POST') {
+            const body = await parseRequestBody(req);
+            if (body.index === null || body.index === undefined) {
+                this.keyPool.setCurrentKey(null);
+                return sendJson(res, 200, { ok: true, message: '已切换到自动选择模式' });
+            }
+            this.keyPool.setCurrentKey(body.index);
+            const current = this.keyPool.getCurrentKey();
+            return sendJson(res, 200, { ok: true, message: `已切换到: ${current.keyInfo.name}`, current_key: { index: current.index, name: current.keyInfo.name } });
         }
         return sendJson(res, 404, { error: 'Not Found' });
     }
